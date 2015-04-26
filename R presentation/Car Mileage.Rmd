@@ -1,0 +1,187 @@
+---
+title: "Analysis of Car Mileage versus Transmission Option"
+author: "Avranil Ghosh"
+date: "Sunday, February 22, 2015"
+output: html_document
+---
+
+## Executive Sumary:
+
+With rising fuel prices, mileage has become a very important criteria for selection of car in today's world. However the transmission option - Manual and 
+auto is also one of the key comfort features that customers are definitely looking for. In this project we will investigate the mileage given by some 32 
+automobiles (1973 to 1974 models) as available in dataset mtcars and compare it with the transmission option of the cars and try to provide some inferential 
+analysis which can help customers decide on the best choice of their car.
+
+### Analysing Mileage per gallon (mpg) without considering other factors
+
+```{r meanmpg,echo=FALSE,cache=TRUE}
+data(mtcars)
+manu<-mtcars[mtcars$am==1,]
+auto<-mtcars[mtcars$am==0,]
+mnmanu<-mean(manu$mpg)
+mnauto<-mean(auto$mpg)
+
+```
+
+If we plot the average mpg for all the cars baed on their Transmission option, we clearly see that manual cars have average mpg of `r mnmanu` while automatic 
+cars give an average of `r mnauto`. This is clearly seen in Plot1 in annexure. However this conclusion will not be sufficient if we disregard the other 
+factors like weight, disp, etc.
+
+### Deciding on factors to fit the liner model
+
+
+```{r cor,echo=FALSE,cache=TRUE}
+mpgcyl<-cor(mtcars$mpg,mtcars$cyl)
+mpgdisp<-cor(mtcars$mpg,mtcars$disp)
+mpgwt<-cor(mtcars$mpg,mtcars$wt)
+mpghp<-cor(mtcars$mpg,mtcars$hp)
+cylwt<-cor(mtcars$cyl,mtcars$wt)
+cyldisp<-cor(mtcars$cyl,mtcars$disp)
+
+```
+General experience says that mileage should depend on the no. of cyliners, displacement, weight and horsepower of the car. If we plot correlation of mileage 
+with these factors, we get:
+
+Correlation between mileage and No of cylinders: `r mpgcyl`
+Correlation between mileage and Displacement: `r mpgdisp`
+Correlation between mileage and Weight: `r mpgwt`
+Correlation between mileage and Horsepower: `r mpghp`
+
+It seems we can proceed with Cylinder, Displacement and Weight which are most correlated to mileage. However Cylinder and Displacement are highly co-related 
+to each other (`r cyldisp`) and hence we can design the model with cylinders and weight as the co-factors.
+
+### Analysing Mileage per gallon (mpg) with weight as the cofactor:
+
+Lets fit the 2 lines, different slopes ( interactions) model as:
+
+Mi = b0 +b1.1 (am=1 or manual) + b2.Yi +b3.1 (am=1 or manual).Yi +ei
+
+where bo = mpg for AUTO at 0 weight, 
+b0+b1 = mpg for Manual at 0 weight,
+b2 = change in mpg for 1 ton change in weight for auto,
+b2+b3 = change in mpg for 1 ton change in weight for manual,
+ei = everything we have not considered.
+
+Lets see the summary with weight as the cofactor in predicting mileage
+
+```{r wt,echo=FALSE,cache=FALSE}
+
+fit<-lm(mpg~wt+factor(am)+wt*factor(am),data=mtcars)
+summary(fit)$coeff[,1]
+
+```
+
+If we analyse the coefficients (significant at 99% confidence level) as per the definitions explained in equation above we can see that slope for am=1 or 
+manual is more negative than am=0 or auto. Hence mileage falls with increase in weight more steeply for manual than for auto. Also intercept of manual is 
+more than auto. This means mileage is more for manual than auto for lower weights.
+   
+The above interpretation is clearly seen in Plot 2.1 in appendix. In the plot we see that mileage for manual cars is more than auto when weight is less than 2.8 
+ton. Above this weight, auto cars give more mileage than manual cars.
+Outliers in residuals: Merc240D, Fiat128 and Toyota Corolla
+
+### Analysing Mileage per gallon (mpg) with No. of cylinders as the cofactor:
+
+Lets see the summary with weight as the cofactor in predicting mileage
+
+```{r cyl,echo=FALSE,cache=FALSE}
+
+fit1<-lm(mpg~cyl+factor(am)+cyl*factor(am),data=mtcars)
+summary(fit1)$coeff[,1]
+
+```
+
+If we analyse the coefficients (significant at 99% confidence level) as per the definitions explained in equation above we can see that slope for am=1 or 
+manual is more negative than am=0 or auto. Hence mileage falls with increase in weight more steeply for manual than for auto. 
+
+The above interpretation is clearly seen in Plot 3.1 in appendix. In the plot we see that mileage for manual cars is more than auto when no. of cylinders is 
+less ( 4 or 6). However for cars with 8 cylinders mileage is almost same for auto and manual cars.
+Outliers in residuals: Volvo 142E, Datson710 and Toyota Corolla
+
+### Analysing Mileage per gallon (mpg) with weight and No. of cylinders as the cofactor:
+
+Lets see the summary with both weight and no. of cylinders as the cofactors in predicting mileage
+
+```{r wtcyl,echo=FALSE,cache=TRUE}
+
+fit2<-lm(formula = mpg ~ factor(am) + wt + cyl, data = mtcars)
+summary(fit2)$coeff[,1]
+
+```
+
+If we analyse the coefficients (significant at 95% confidence level) we can see that 
+
+1. Mileage decrease with increase in both weight and no. of cylinders
+2. Increase in wt causes a more rapid decrease in mileage than increase in cyl
+3. Mileage of manual cars is higher than mileage of auto cars
+4. Outliers in residuals: Toyota Corona, Fiat128 and Toyota Corolla
+
+### Inference:
+
+For lower weight cars with less cylinders, manual transmission will give more mileage whereas for higher weight cars above 3 ton with 8 cylinders, auto 
+transmission gives more mileage. However the uncertainity in this model being only 2 factors are given importance and data set is too old with limited car 
+varieties. 
+
+## APPENDIX
+
+## Plot for comparing average Mileage for Auto and Manual cars without any cofactor:
+
+### Plot 1
+
+```{r plot1,echo=FALSE,cache=FALSE}
+
+plot(mtcars$am,mtcars$mpg,xlab = "Transmission Type", ylab = "Mileage")
+points(mtcars$am,mtcars$mpg,pch = 19,col=((mtcars$am==1)*1+1))
+title("Transmission Vs Mileage")
+abline(h=mean(manu$mpg),col='red')
+abline(h=mean(auto$mpg),col='black')
+legend("top",legend=c("Auto","Manual"),col=c("black","red"),pch=19)
+
+```
+
+
+## Plot for Analysing Mileage per gallon (mpg) with weight as the cofactor:
+
+### Model Fit Plot - Plot 2.1
+
+```{r plot2.1,echo=FALSE,cache=FALSE}
+
+plot(mtcars$wt,mtcars$mpg,xlab = "Car Weight (tons)", ylab = "Mileage")
+title("Weight & Tranmission for Mileage")
+points(mtcars$wt,mtcars$mpg,pch = 19,col=((mtcars$am==1)*1+1))
+abline(c(fit$coeff[1],fit$coeff[2]),col="black",lwd=3)
+abline(c(fit$coeff[1]+fit$coeff[3],fit$coeff[2]+fit$coeff[4]),col="red",lwd=3)
+legend("topright",legend=c("Auto","Manual"),col=c("black","red"),pch=19)
+
+```
+
+### Residual Plot - Plot 2.2
+
+```{r plot2.2,echo=FALSE,cache=FALSE}
+
+par(mfrow=c(2,2),mar=c(2,2,1,1),oma=c(0,0,0.5,0))
+plot(fit)
+
+```
+
+## Plot for Analysing Mileage per gallon (mpg) with No of cylinders as the cofactor:
+
+### Model Fit Plot - Plot 3.1
+
+```{r plot3.1,echo=FALSE,cache=FALSE}
+
+plot(mtcars$cyl,mtcars$mpg,xlab = "No of Cylinders", ylab = "Mileage")
+title("No of Cyl & Tranmission for Mileage")
+points(mtcars$cyl,mtcars$mpg,pch = 19,col=((mtcars$am==1)*1+1))
+abline(c(fit1$coeff[1],fit1$coeff[2]),col="black",lwd=3)
+abline(c(fit1$coeff[1]+fit1$coeff[3],fit1$coeff[2]+fit1$coeff[4]),col="red",lwd=3)
+legend("topright",legend=c("Auto","Manual"),col=c("black","red"),pch=19)
+
+```
+
+### Residual Plot - Plot 3.2
+
+
+```{r plot3.2,echo=FALSE,cache=FALSE}
+
+par(mfrow=c(2,2),mar=c(2,2,1,1),oma=c(0,0,0.5,0))
+plot(fit1)
